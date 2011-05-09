@@ -3,4 +3,5 @@ if respond_to? :source
   source "http://gems.github.com"
 end
 
+gem "mongrel", "1.2.0.pre2"
 gem "rspec", "1.3.2"
