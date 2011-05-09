@@ -112,6 +112,7 @@
 /lib/rb/ext/conftest.dSYM/
 /lib/rb/ext/thrift_native.bundle
 /lib/rb/debug_proto_test
+/lib/rb/pkg
 /lib/rb/spec/gen-rb
 /lib/php/Makefile
 /lib/php/Makefile.in
