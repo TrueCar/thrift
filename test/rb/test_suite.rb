@@ -17,4 +17,4 @@
 # under the License.
 #
 
-Dir["{core,generation}/**/*.rb"].each {|f| require f }
+Dir["#{File.dirname(__FILE__)}/{core,generation}/**/*.rb"].each {|f| require f }
