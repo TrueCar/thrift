@@ -157,4 +157,94 @@ class ThriftServerSpec < Spec::ExampleGroup
       lambda { @server.serve }.should throw_symbol(:stop)
     end
   end
+
+  describe ProcessPoolServer do
+    it_should_behave_like "servers"
+
+    def server_type
+      # put this stuff here so it runs before the server is created
+      @excQ = mock("Queue")
+      Queue.should_receive(:new).and_return(@excQ)
+      ProcessPoolServer
+    end
+
+    it "should set up the queues" do
+      @server.instance_variable_get(:'@exception_q').should be(@excQ)
+    end
+
+    it "should serve inside a forked process" do
+      Thread.should_receive(:new).and_return do |block|
+        @server.should_receive(:serve)
+        block.call
+        @server.rspec_verify
+      end
+      @excQ.should_receive(:pop).and_throw(:popped)
+      lambda { @server.rescuable_serve }.should throw_symbol(:popped)
+    end
+
+    it "should avoid running the server twice when retrying rescuable_serve" do
+      Thread.should_receive(:new).and_return do |block|
+        @server.should_receive(:serve)
+        block.call
+        @server.rspec_verify
+      end
+      @excQ.should_receive(:pop).twice.and_throw(:popped)
+      lambda { @server.rescuable_serve }.should throw_symbol(:popped)
+      lambda { @server.rescuable_serve }.should throw_symbol(:popped)
+    end
+
+    it "should serve using a process pool" do
+      @serverTrans.should_receive(:listen).ordered
+      current_pid = 0
+      Process.should_receive(:fork).and_return do |block|
+        block.call
+        current_pid += 1
+        current_pid
+      end
+      @serverTrans.should_receive(:accept).exactly(3).times.and_return(@client)
+      @trans.should_receive(:get_transport).exactly(3).times.and_return(@trans)
+      @prot.should_receive(:get_protocol).exactly(3).times.and_return(@prot)
+      x = 0
+      error = RuntimeError.new("Stopped")
+      @processor.should_receive(:process).exactly(3).times.with(@prot, @prot).and_return do
+        case (x += 1)
+        when 1 then raise Thrift::TransportException
+        when 2 then raise Thrift::ProtocolException
+        when 3 then raise error
+        end
+      end
+      y = 0
+      Process.should_receive(:wait2).and_return do
+        y += 1
+        status = Process::Status.allocate
+        status.stub!(:exitstatus).and_return(1)
+        [y, status  ]
+      end
+      Process.should_receive(:exit).with(1)
+      @trans.should_receive(:close).exactly(3).times
+      @excQ.should_receive(:push).with(error).and_throw(:stop)
+      @serverTrans.should_receive(:close)
+      io_pipe_fn = IO.method(:pipe)
+      IO.should_receive(:pipe).and_return do
+        io_read, io_write = io_pipe_fn.call
+        io_write.should_receive(:close)
+        io_read.should_receive(:close)
+        io_write_puts_arg = nil
+        io_write.should_receive(:puts).and_return do |arg|
+          io_write_puts_arg = arg
+        end
+        io_read.should_receive(:read).and_return do
+          io_write_puts_arg
+        end
+        [io_read, io_write]
+      end
+      @server.instance_variable_get(:@child_exceptions).tap do |child_exceptions|
+        10.times do |i|
+          child_exceptions[1000 + i] = lambda do
+          end
+        end
+      end
+      lambda { @server.serve }.should throw_symbol(:stop)
+    end
+  end
 end

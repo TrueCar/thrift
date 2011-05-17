@@ -57,6 +57,7 @@ require 'thrift/transport/memory_buffer_transport'
 # server
 require 'thrift/server/base_server'
 require 'thrift/server/nonblocking_server'
+require 'thrift/server/process_pool_server'
 require 'thrift/server/simple_server'
 require 'thrift/server/threaded_server'
 require 'thrift/server/thread_pool_server'
