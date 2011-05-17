@@ -105,13 +105,14 @@
 /lib/rb/Makefile.in
 /lib/rb/.config
 /lib/rb/benchmark/gen-rb
+/lib/rb/debug_proto_test
 /lib/rb/ext/Makefile
 /lib/rb/ext/*.o
 /lib/rb/ext/*.log
 /lib/rb/ext/*.so
 /lib/rb/ext/conftest.dSYM/
 /lib/rb/ext/thrift_native.bundle
-/lib/rb/debug_proto_test
+/lib/rb/lib/thrift_native.so
 /lib/rb/pkg
 /lib/rb/spec/gen-rb
 /lib/php/Makefile
